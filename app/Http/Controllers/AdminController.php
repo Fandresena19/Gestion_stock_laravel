@@ -90,14 +90,23 @@ class AdminController extends Controller
     public function importAchats(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv'
+            'files'   => 'required',
+            'files.*' => 'mimes:xlsx,xls,csv'
         ]);
 
-        Excel::import(new AchatsImport, $request->file('file'));
+        foreach ($request->file('files') as $file) {
+
+            // 🔥 Import en queue (fortement recommandé)
+            Excel::queueImport(new AchatsImport, $file);
+
+            // Si tu ne veux pas queue :
+            // Excel::import(new AchatsImport, $file);
+        }
 
         return redirect()->route('admin.achats')
-            ->with('success', 'Importation réussie');
+            ->with('success', 'Tous les fichiers sont en cours d\'importation');
     }
+
 
     public function Ventes()
     {

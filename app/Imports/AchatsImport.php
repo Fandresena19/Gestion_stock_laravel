@@ -5,29 +5,33 @@ namespace App\Imports;
 use App\Models\Achat;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use Carbon\Carbon;
 
-class AchatsImport implements ToModel, WithHeadingRow
+class AchatsImport implements
+    ToModel,
+    WithHeadingRow,
+    WithChunkReading,
+    WithBatchInserts,
+    ShouldQueue
 {
     public function model(array $row)
     {
-        // ❌ Ne rien insérer si code16 différent de 16
         if (!isset($row['code16']) || (int)$row['code16'] !== 16) {
             return null;
         }
 
-        // ❌ Ne rien insérer si code est null ou vide
         if (empty($row['code'])) {
             return null;
         }
 
         $date = null;
 
-        // 🔥 Vérification si date existe
         if (!empty($row['date'])) {
 
-            // 🔹 Cas 1 : format 160126 (ddmmyy)
             if (is_numeric($row['date']) && strlen($row['date']) == 6) {
 
                 $day   = substr($row['date'], 0, 2);
@@ -40,10 +44,7 @@ class AchatsImport implements ToModel, WithHeadingRow
                 } catch (\Exception $e) {
                     $date = null;
                 }
-            }
-
-            // 🔹 Cas 2 : vraie date Excel (nombre long genre 45231)
-            elseif (is_numeric($row['date'])) {
+            } elseif (is_numeric($row['date'])) {
 
                 try {
                     $date = Carbon::instance(
@@ -52,10 +53,8 @@ class AchatsImport implements ToModel, WithHeadingRow
                 } catch (\Exception $e) {
                     $date = null;
                 }
-            }
+            } else {
 
-            // 🔹 Cas 3 : date texte normale
-            else {
                 try {
                     $date = Carbon::parse($row['date'])->format('Y-m-d');
                 } catch (\Exception $e) {
@@ -74,5 +73,17 @@ class AchatsImport implements ToModel, WithHeadingRow
             'prixu'         => $row['prixu'] ?? 0,
             'quantiteachat' => $row['quantiteachat'] ?? 0,
         ]);
+    }
+
+    // 🔥 Lecture par bloc
+    public function chunkSize(): int
+    {
+        return 1000;
+    }
+
+    // 🔥 Insert par lot
+    public function batchSize(): int
+    {
+        return 1000;
     }
 }

@@ -19,10 +19,10 @@
             <form action="{{ route('achats.import') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="file"
-                    name="file"
+                    name="files[]"
                     class="px-4 py-2 border rounded-md 
                focus:outline-none focus:ring-2 focus:ring-blue-500
-               dark:bg-gray-700 dark:text-white" required>
+               dark:bg-gray-700 dark:text-white" multiple required>
                 <!-- <button type="submit">Importer</button> -->
                 <input type="submit" name="submit" value="Importer" class="bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600">
             </form>
