@@ -37,7 +37,6 @@
                         <table class="w-full border border-gray-200 dark:border-gray-700">
                             <thead class="bg-gray-100 dark:bg-gray-800 text-center">
                                 <tr>
-                                    <th class="px-4 py-2">Code16</th>
                                     <th class="px-4 py-2">Code</th>
                                     <th class="px-4 py-2">Date</th>
                                     <th class="px-4 py-2">Article (Libellé)</th>
@@ -49,9 +48,6 @@
                             <tbody id="achatsTable">
                                 @forelse ($achats as $achat)
                                 <tr class="border-t border-gray-200 dark:border-gray-700 text-center">
-                                    <td class="px-4 py-2 text-sm">
-                                        {{ $achat->Code16 }}
-                                    </td>
                                     <td class="px-4 py-2 text-sm">
                                         {{ $achat->Code }}
                                     </td>

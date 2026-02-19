@@ -86,7 +86,6 @@ class AdminController extends Controller
             ->paginate(20);
         return view('admin.achats', compact('achats'));
     }
-
     public function importAchats(Request $request)
     {
         $request->validate([
@@ -96,16 +95,14 @@ class AdminController extends Controller
 
         foreach ($request->file('files') as $file) {
 
-            // 🔥 Import en queue (fortement recommandé)
-            Excel::queueImport(new AchatsImport, $file);
-
-            // Si tu ne veux pas queue :
-            // Excel::import(new AchatsImport, $file);
+            // Version simple (pas queue pour test)
+            Excel::import(new AchatsImport, $file);
         }
 
         return redirect()->route('admin.achats')
-            ->with('success', 'Tous les fichiers sont en cours d\'importation');
+            ->with('success', 'Importation terminée avec succès');
     }
+
 
 
     public function Ventes()
@@ -126,7 +123,7 @@ class AdminController extends Controller
 
         $ventes = DB::table($tableName)
             ->orderBy('idquand', 'asc')
-            ->paginate(20);
+            ->paginate(50);
 
         $topProduit = DB::table($tableName)
             ->select('idcint', 'idlib', DB::raw('SUM(E1) as total_vendu'))

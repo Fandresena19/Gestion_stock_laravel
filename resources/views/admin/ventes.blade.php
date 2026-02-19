@@ -56,9 +56,9 @@
         </div>
     </div>
 
-    @if (Illuminate\Support\Facades\Schema::hasTable('servmcljournalYMD'))
-    <div class="mt-4">
-        {{ $ventes->links() }}
-    </div>
+    @if(method_exists($ventes, 'links'))
+    {{ $ventes->links() }}
     @endif
+
+
 </x-app-layout>

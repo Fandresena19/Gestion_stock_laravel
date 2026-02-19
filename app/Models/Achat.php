@@ -3,21 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class Achat extends Model
 {
     protected $table = 'achats';
 
     protected $fillable = [
-        'code16',
+        'Code',
+        'Liblong',
+        'PrixU',
+        'QuantiteAchat',
         'date',
-        'refart',
-        'fournisseur',
-        'code',
-        'liblong',
-        'prixu',
-        'quantiteachat',
     ];
 
     public $timestamps = false;
