@@ -33,7 +33,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     // ✅ CORRECTION : doublon supprimé sur /stocks
     Route::get('/stocks', [AdminController::class, 'stocks'])->name('admin.stocks');
-    Route::post('/stocks/calcul', [AdminController::class, 'calculStock'])->name('admin.calculStock');
     Route::post('/update-stock', [AdminController::class, 'updateStock'])->name('admin.updateStock');
 });
 

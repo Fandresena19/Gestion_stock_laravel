@@ -14,14 +14,6 @@
                focus:outline-none focus:ring-2 focus:ring-blue-500
                dark:bg-gray-700 dark:text-white">
             </form>
-
-
-            <form action="{{ route('admin.calculStock') }}" method="POST">
-                @csrf
-                <button type="submit" class=" bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600">
-                    Recalculer le stock
-                </button>
-            </form>
         </div>
     </x-slot>
 

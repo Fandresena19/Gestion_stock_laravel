@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\articles;
 use App\Models\Achat;
 use App\Models\Stocks;
+use App\Models\ImportedFile;
+use App\Models\ImportedRow;
 use App\Imports\AchatsImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +16,10 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    // =========================================================================
+    // ARTICLES
+    // =========================================================================
+
     public function viewArticles(Request $request)
     {
         $search = $request->search;
@@ -30,9 +36,7 @@ class AdminController extends Controller
 
     public function deleteArticle($Code)
     {
-        $articles = articles::findOrFail($Code);
-        $articles->delete();
-
+        articles::findOrFail($Code)->delete();
         return redirect('/viewArticles');
     }
 
@@ -43,12 +47,10 @@ class AdminController extends Controller
 
     public function postAddArticles(Request $request)
     {
-        $articles = new articles();
-
-        $articles->Code = $request->input('Code');
-        $articles->Liblong = $request->input('Liblong');
-
-        $articles->save();
+        $article          = new articles();
+        $article->Code    = $request->input('Code');
+        $article->Liblong = $request->input('Liblong');
+        $article->save();
 
         return redirect()->back();
     }
@@ -59,65 +61,110 @@ class AdminController extends Controller
         return view('admin.updateArticle', compact('articles'));
     }
 
-    public function postUpdateArticle(request $request, $Code)
+    public function postUpdateArticle(Request $request, $Code)
     {
-        $articles = articles::findOrFail($Code);
+        $articles          = articles::findOrFail($Code);
         $articles->Liblong = $request->Liblong;
         $articles->save();
         return redirect('/viewArticles');
     }
 
-    public function viewAchats()
-    {
-        $achats = Achat::orderBy('date', 'desc')->paginate(20);
-        return view('admin.achats', compact('achats'));
-    }
+    // =========================================================================
+    // ACHATS
+    // =========================================================================
 
-    public function viewAchat(Request $request)
+    /**
+     * Liste des achats avec recherche optionnelle.
+     */
+    public function viewAchats(Request $request)
     {
-        $search = $request->search;
+        $search = $request->get('search');
 
         $achats = Achat::when($search, function ($query) use ($search) {
             $query->where('Code', 'like', "%{$search}%")
                 ->orWhere('Liblong', 'like', "%{$search}%");
         })
+            ->orderBy('date', 'desc')
+            ->paginate(20)
+            ->withQueryString();
 
-            ->orderBy('date', 'asc')
-            ->paginate(20);
         return view('admin.achats', compact('achats'));
     }
+
+    /**
+     * Import manuel de fichiers Excel via le formulaire.
+     *
+     * Logique :
+     *  - Le fichier est identifié par son nom d'origine.
+     *  - Si le nom est déjà connu, on scanne quand même toutes les lignes.
+     *  - Seules les lignes dont le hash est NOUVEAU sont insérées.
+     *  - Aucun doublon dans `achats`, quelle que soit la date d'upload.
+     */
     public function importAchats(Request $request)
     {
         $request->validate([
             'files'   => 'required',
-            'files.*' => 'mimes:xlsx,xls,csv'
+            'files.*' => 'mimes:xlsx,xls,csv|max:20480',
         ]);
 
-        foreach ($request->file('files') as $file) {
+        $totalNew     = 0;
+        $totalSkipped = 0;
+        $details      = [];
 
-            // Version simple (pas queue pour test)
-            Excel::import(new AchatsImport, $file);
+        // Date du jour pour les nouvelles lignes importées manuellement
+        $importDate = now()->format('Y-m-d');
+
+        foreach ($request->file('files') as $file) {
+            $filename = $file->getClientOriginalName();
+            $path     = $file->getPathname();
+
+            // Récupérer l'état actuel avant import pour le message de retour
+            $existingFile  = ImportedFile::where('filename', $filename)->first();
+            $existingCount = $existingFile
+                ? ImportedRow::where('imported_file_id', $existingFile->id)->count()
+                : 0;
+
+            $importer = new AchatsImport($filename, $path, $importDate);
+            Excel::import($importer, $file);
+
+            $newRows     = $importer->getNewRowsCount();
+            $skippedRows = $importer->getSkippedRowsCount();
+
+            $totalNew     += $newRows;
+            $totalSkipped += $skippedRows;
+
+            $details[] = [
+                'filename'     => $filename,
+                'new'          => $newRows,
+                'skipped'      => $skippedRows,
+                'was_existing' => $existingCount > 0,
+            ];
         }
 
-        return redirect()->route('admin.achats')
-            ->with('success', 'Importation terminée avec succès');
+        // Construction du message flash
+        $message = "{$totalNew} nouvelle(s) ligne(s) insérée(s)";
+        if ($totalSkipped > 0) {
+            $message .= ", {$totalSkipped} ligne(s) ignorée(s) (déjà présentes ou doublons).";
+        }
+
+        return redirect()->route('admin.achats')->with('success', $message);
     }
 
-
+    // =========================================================================
+    // VENTES
+    // =========================================================================
 
     public function Ventes()
     {
         $yesterday = Carbon::yesterday();
         $tableName = 'servmcljournal' . $yesterday->format('Ymd');
 
-        $topProduit = null; //  toujours initialiser
-
         if (!Schema::hasTable($tableName)) {
             return view('admin.ventes', [
-                'ventes' => collect(),
+                'ventes'     => collect(),
                 'topProduit' => null,
-                'yesterday' => $yesterday,
-                'error' => "La table $tableName n'existe pas."
+                'yesterday'  => $yesterday,
+                'error'      => "La table $tableName n'existe pas.",
             ]);
         }
 
@@ -134,11 +181,12 @@ class AdminController extends Controller
         return view('admin.ventes', compact('ventes', 'topProduit', 'yesterday'));
     }
 
+    // =========================================================================
+    // STOCKS
+    // =========================================================================
 
-
-    public function calculStock()
+    private function calculStock()
     {
-        //  Récupérer tous les articles depuis achats
         $articles = DB::table('achats')
             ->select('code', 'liblong')
             ->whereNotNull('code')
@@ -146,46 +194,36 @@ class AdminController extends Controller
             ->distinct()
             ->get();
 
+        $tables = DB::select("SHOW TABLES LIKE 'servmcljournal%'");
 
         foreach ($articles as $article) {
-
-            // Total achats
             $totalAchats = DB::table('achats')
                 ->where('code', $article->code)
                 ->sum('quantiteachat');
 
-            //  Total ventes (toutes les tables servmcljournal)
             $totalVentes = 0;
 
-            $tables = DB::select("SHOW TABLES LIKE 'servmcljournal%'");
-
             foreach ($tables as $table) {
-
-                $tableName = array_values((array)$table)[0];
-
+                $tableName    = array_values((array) $table)[0];
                 $totalVentes += DB::table($tableName)
                     ->where('idcint', $article->code)
                     ->sum('E1');
             }
 
-            //  Calcul final
-            $stockFinal = $totalAchats - $totalVentes;
-
-            //  Insert ou update
             Stocks::updateOrCreate(
                 ['code' => $article->code],
                 [
-                    'liblong' => $article->liblong,
-                    'quantitestock' => $stockFinal
+                    'liblong'       => $article->liblong,
+                    'quantitestock' => $totalAchats - $totalVentes,
                 ]
             );
         }
-
-        return back()->with('success', 'Stock calculé avec succès.');
     }
 
     public function stocks(Request $request)
     {
+        $this->calculStock();
+
         $search = $request->search;
 
         $stocks = Stocks::when($search, function ($query) use ($search) {
@@ -193,7 +231,7 @@ class AdminController extends Controller
                 ->orWhere('liblong', 'like', "%{$search}%");
         })
             ->orderBy('code', 'asc')
-            ->paginate(20);
+            ->paginate(50);
 
         return view('admin.stocks', compact('stocks'));
     }
@@ -201,17 +239,13 @@ class AdminController extends Controller
     public function updateStock(Request $request)
     {
         $request->validate([
-            'Code' => 'required',
-            'quantite' => 'required|numeric|min:0'
+            'Code'     => 'required',
+            'quantite' => 'required|numeric|min:0',
         ]);
 
         $updated = Stocks::where('Code', $request->Code)
-            ->update([
-                'QuantiteStock' => $request->quantite
-            ]);
+            ->update(['QuantiteStock' => $request->quantite]);
 
-        return response()->json([
-            'success' => $updated ? true : false
-        ]);
+        return response()->json(['success' => (bool) $updated]);
     }
 }
