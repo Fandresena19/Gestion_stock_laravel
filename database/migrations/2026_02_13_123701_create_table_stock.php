@@ -6,23 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('stocks', function (Blueprint $table) {
-            $table->char('Code', 13)->unique();
-            $table->string('Liblong');
-            $table->integer('QuantiteStock')->default(0);
+            $table->char('code', 13)->primary();
+            $table->string('liblong');
+            $table->string('fournisseur')->nullable();
+            $table->integer('quantitestock')->default(0);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('table_stock');
+        Schema::dropIfExists('stocks');
     }
 };

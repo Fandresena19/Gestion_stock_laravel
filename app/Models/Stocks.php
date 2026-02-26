@@ -10,12 +10,14 @@ class Stocks extends Model
 
     public $incrementing = false;
 
-    protected $keyType = 'char';
+    protected $keyType = 'string';
 
     protected $fillable = [
         'code',
         'liblong',
-        'quantitestock'
+        'fournisseur',
+        'quantitestock',
     ];
+
     public $timestamps = false;
 }

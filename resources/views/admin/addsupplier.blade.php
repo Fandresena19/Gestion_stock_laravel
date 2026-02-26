@@ -1,8 +1,8 @@
-{{-- resources/views/admin/addArticles.blade.php --}}
+{{-- resources/views/admin/addSupplier.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Ajout Article') }}
+            {{ __('Ajout Fournisseur') }}
         </h2>
     </x-slot>
 
@@ -27,40 +27,18 @@
                     </div>
                     @endif
 
-                    <form action="{{ route('admin.postaddarticles') }}" method="POST">
+                    <form action="{{ route('admin.postaddfournisseur') }}" method="POST">
                         @csrf
                         <input
                             type="text"
-                            name="Code"
-                            placeholder="Code"
-                            value="{{ old('Code') }}"
-                            class="border border-gray-300 rounded-md p-2 w-full mb-4 text-gray-900"
-                            required>
-
-                        <input
-                            type="text"
-                            name="Liblong"
-                            placeholder="Libellé"
-                            value="{{ old('Liblong') }}"
-                            class="border border-gray-300 rounded-md p-2 w-full mb-4 text-gray-900"
-                            required>
-
-                        {{-- Sélection du fournisseur (stocke le nom texte) --}}
-                        <select
                             name="fournisseur"
-                            class="border border-gray-300 rounded-md p-2 w-full mb-4 text-gray-900">
-                            <option value="">-- Sélectionner un fournisseur (optionnel) --</option>
-                            @foreach($fournisseurs as $four)
-                            <option value="{{ $four->fournisseur }}"
-                                {{ old('fournisseur') === $four->fournisseur ? 'selected' : '' }}>
-                                {{ $four->fournisseur }}
-                            </option>
-                            @endforeach
-                        </select>
-
+                            placeholder="Nom du fournisseur"
+                            value="{{ old('fournisseur') }}"
+                            class="border border-gray-300 rounded-md p-2 w-full mb-4 text-gray-900"
+                            required>
                         <input
                             type="submit"
-                            value="Ajouter Article"
+                            value="Ajouter Fournisseur"
                             class="bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600 cursor-pointer">
                     </form>
                 </div>

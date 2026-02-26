@@ -14,31 +14,52 @@ Route::get('/dashboard', [UserController::class, 'Dashboard'])
 
 Route::middleware(['auth', 'admin'])->group(function () {
 
-    Route::get('/addArticles', [AdminController::class, 'addArticles'])->name('admin.addArticles');
+
+    // -------------------------------------------------------------------------
+    // ARTICLES
+    // -------------------------------------------------------------------------
+    Route::get('/addArticles',  [AdminController::class, 'addArticles'])->name('admin.addArticles');
     Route::post('/addArticles', [AdminController::class, 'postAddArticles'])->name('admin.postaddarticles');
 
-    // ✅ CORRECTION : une seule route GET /viewArticles (les deux étaient identiques)
     Route::get('/viewArticles', [AdminController::class, 'viewArticles'])->name('admin.viewArticles');
 
-    Route::get('/deleteArticle/{Code}', [AdminController::class, 'deleteArticle'])->name('admin.deleteArticle');
-    Route::get('/updateArticle/{Code}', [AdminController::class, 'updateArticle'])->name('admin.updateArticle');
+    Route::get('/deleteArticle/{Code}',  [AdminController::class, 'deleteArticle'])->name('admin.deleteArticle');
+    Route::get('/updateArticle/{Code}',  [AdminController::class, 'updateArticle'])->name('admin.updateArticle');
     Route::post('/updateArticle/{Code}', [AdminController::class, 'postUpdateArticle'])->name('admin.postUptadeArticles');
 
-    // ✅ CORRECTION : deux routes GET /achats avec le même nom → supprimé le doublon
-    // viewAchat (avec recherche) est géré dans viewAchats via $request->search
-    Route::get('/achats', [AdminController::class, 'viewAchats'])->name('admin.achats');
+    // -------------------------------------------------------------------------
+    // FOURNISSEURS
+    // -------------------------------------------------------------------------
+    Route::get('/addFournisseurs',  [AdminController::class, 'addFournisseur'])->name('admin.addSupplier');
+    Route::post('/addFournisseurs', [AdminController::class, 'postAddFournisseur'])->name('admin.postaddfournisseur');
+
+    Route::get('/viewFournisseurs', [AdminController::class, 'viewFournisseurs'])->name('admin.viewSupplier');
+
+    Route::get('/deleteFournisseur/{id}',  [AdminController::class, 'deleteFournisseur'])->name('admin.deleteFournisseur');
+    Route::get('/updateFournisseur/{id}',  [AdminController::class, 'updateFournisseur'])->name('admin.updateFournisseur');
+    Route::post('/updateFournisseur/{id}', [AdminController::class, 'postUpdateFournisseur'])->name('admin.postUpdateFournisseur');
+
+    // -------------------------------------------------------------------------
+    // ACHATS
+    // -------------------------------------------------------------------------
+    Route::get('/achats',        [AdminController::class, 'viewAchats'])->name('admin.achats');
     Route::post('/achats/import', [AdminController::class, 'importAchats'])->name('achats.import');
 
+    // -------------------------------------------------------------------------
+    // VENTES
+    // -------------------------------------------------------------------------
     Route::get('/ventes', [AdminController::class, 'Ventes'])->name('admin.ventes');
 
-    // ✅ CORRECTION : doublon supprimé sur /stocks
-    Route::get('/stocks', [AdminController::class, 'stocks'])->name('admin.stocks');
+    // -------------------------------------------------------------------------
+    // STOCKS
+    // -------------------------------------------------------------------------
+    Route::get('/stocks',       [AdminController::class, 'stocks'])->name('admin.stocks');
     Route::post('/update-stock', [AdminController::class, 'updateStock'])->name('admin.updateStock');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 

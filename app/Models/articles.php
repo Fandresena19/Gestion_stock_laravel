@@ -6,11 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class articles extends Model
 {
-    //Dire de ne pas chercher created_at,et update_at
     public $timestamps = false;
 
-    //Indiquer que Code est le primarykey
+    // Correspond exactement à la colonne en base (majuscule)
     protected $primaryKey = 'Code';
-    public $incrementing = false; //pas d'incrementation
-    protected $keyType = 'Char'; //Type de charactère est char 
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = ['Code', 'Liblong', 'fournisseur'];
+
+    /**
+     * Relation vers fournisseur par correspondance de nom (pas de FK).
+     */
+    public function fournisseurRelation()
+    {
+        return $this->belongsTo(fournisseur::class, 'fournisseur', 'fournisseur');
+    }
 }
